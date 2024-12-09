@@ -45,19 +45,22 @@ class REsquare():
             # print(f"Error opening image {img_in}: {e}")
             self.img_dict["タイプ"][-1] += "--読み込みエラー"
             return False
+        
         # 透明度を持つ画像を白背景のRGBに変換
-        if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+        if img.mode in ('RGBA', 'LA'):
+            alpha = img.split()[3]
+        elif img.mode == 'P' and 'transparency' in img.info:
+            img = img.convert('RGBA')
+            alpha = img.split()[3]
+        else:
+            img = img.convert('RGB')
+            alpha = None
+
+        if alpha is not None:
             background = Image.new('RGB', img.size, (255, 255, 255))  # 白背景
-            if img.mode == 'P' and 'transparency' in img.info:
-                # パレットモードで透明度がある場合
-                transparency = img.info['transparency']
-                img = img.convert('RGBA')
-                mask = Image.eval(img.split()[3], lambda a: 255 if a == transparency else 0)
-                background.paste(img, mask=mask)
-            else:
-                # 通常のアルファチャンネルを持つ場合
-                background.paste(img, mask=img.split()[3])  # アルファチャンネルをマスクとして使用
+            background.paste(img, mask=alpha)  # アルファチャンネルをマスクとして使用
             img = background
+            
         else:
             img = img.convert('RGB')
         # 元の画像サイズを取得
